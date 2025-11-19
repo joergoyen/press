@@ -2,207 +2,237 @@
 <html lang="de">
 <head>
   <meta charset="utf-8">
-  <title>CSV zu RSS</title>
+  <title>data.csv Viewer</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #0b1120;
+      --fg: #e5e7eb;
+      --muted: #9ca3af;
+      --border: #1f2937;
+      --accent: #3b82f6;
+      --accent-soft: rgba(59,130,246,0.25);
+      --card: #020617;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       margin: 0;
       padding: 16px;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #0d1117;
-      color: #e5e7eb;
+      background: radial-gradient(circle at top, #0f172a, #020617);
+      color: var(--fg);
     }
 
     h1 {
-      font-size: 1.2rem;
-      margin: 0 0 12px;
+      margin: 0 0 8px;
+      font-size: 1.15rem;
+    }
+
+    p {
+      margin: 0 0 10px;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      padding: 12px 14px;
+      margin-bottom: 12px;
     }
 
     label {
+      font-size: 0.8rem;
+      color: var(--muted);
       display: block;
-      margin-top: 10px;
-      font-size: 0.85rem;
+      margin-bottom: 4px;
     }
 
     input[type="text"],
-    input[type="url"],
-    select,
-    textarea {
+    select {
       width: 100%;
-      box-sizing: border-box;
-      margin-top: 4px;
-      padding: 6px 8px;
-      border-radius: 6px;
-      border: 1px solid #374151;
-      background: #020617;
-      color: #e5e7eb;
       font-family: inherit;
-      font-size: 0.9rem;
-    }
-
-    textarea {
-      min-height: 260px;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
-      font-size: 0.8rem;
-      white-space: pre;
-    }
-
-    input:focus,
-    textarea:focus,
-    select:focus {
+      font-size: 0.85rem;
+      padding: 6px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: #020617;
+      color: var(--fg);
       outline: none;
-      border-color: #3b82f6;
-      box-shadow: 0 0 0 1px rgba(59,130,246,0.4);
+    }
+
+    input[type="text"]:focus,
+    select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent-soft);
     }
 
     .row {
-      display: flex;
+      display: grid;
+      grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
       gap: 8px;
-      flex-wrap: wrap;
-      margin-top: 10px;
-      margin-bottom: 6px;
+      margin-top: 8px;
     }
 
-    button {
-      border-radius: 999px;
-      border: 1px solid #374151;
-      background: #2563eb;
-      color: #f9fafb;
-      padding: 6px 12px;
-      font-size: 0.85rem;
-      cursor: pointer;
-    }
-
-    button.secondary {
-      background: #020617;
-    }
-
-    small {
-      color: #9ca3af;
-      font-size: 0.75rem;
+    @media (max-width: 720px) {
+      .row {
+        grid-template-columns: minmax(0, 1fr);
+      }
     }
 
     .status {
       margin-top: 6px;
-      font-size: 0.8rem;
-      color: #9ca3af;
+      font-size: 0.78rem;
+      color: var(--muted);
     }
 
-    hr {
-      margin: 14px 0;
-      border: 0;
-      border-top: 1px solid #1f2937;
+    .status strong {
+      color: var(--accent);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.8rem;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    thead {
+      background: #020617;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+
+    th, td {
+      border-bottom: 1px solid #111827;
+      padding: 4px 6px;
+      text-align: left;
+      vertical-align: top;
+      max-width: 280px;
+      word-wrap: break-word;
+      word-break: break-word;
+    }
+
+    th {
+      font-weight: 600;
+      font-size: 0.78rem;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    tbody tr:nth-child(odd) {
+      background: rgba(15,23,42,0.7);
+    }
+
+    tbody tr:nth-child(even) {
+      background: rgba(15,23,42,0.35);
+    }
+
+    .table-wrapper {
+      margin-top: 8px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      max-height: 70vh;
+      overflow: auto;
+      background: #020617;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.7rem;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+
+    .badge code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+      font-size: 0.7rem;
+    }
+
+    .pill-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-top: 6px;
+      font-size: 0.75rem;
+      color: var(--muted);
+      flex-wrap: wrap;
+    }
+
+    .pill-row span {
+      white-space: nowrap;
     }
   </style>
 </head>
 <body>
 
-<h1>CSV zu RSS (RSS 2.0)</h1>
+<div class="card">
+  <h1>data.csv Viewer</h1>
+  <p>
+    Lädt automatisch <code>data.csv</code> aus dem gleichen Ordner wie diese Datei.
+    Spalte wählen. Textfilter setzen. Tabelle unten aktualisiert sich.
+  </p>
 
-<label>
-  CSV Datei
-  <input type="file" id="csvFile" accept=".csv,text/csv">
-</label>
+  <div class="row">
+    <div>
+      <label for="filterColumn">Filter Spalte</label>
+      <select id="filterColumn" disabled>
+        <option value="">Noch keine Daten</option>
+      </select>
+    </div>
+    <div>
+      <label for="filterText">Filter Text (enthält, case insensitive)</label>
+      <input type="text" id="filterText" placeholder="Suchwort" disabled>
+    </div>
+  </div>
 
-<label>
-  Trennzeichen
-  <select id="delimiter">
-    <option value="auto">Automatisch erkennen</option>
-    <option value=",">Komma ,</option>
-    <option value=";">Semikolon ;</option>
-    <option value="tab">Tabulator</option>
-  </select>
-</label>
+  <div class="pill-row">
+    <span class="badge">
+      Trennzeichen Autoerkennung
+      <code>, ; \t</code>
+    </span>
+    <span id="countInfo"></span>
+  </div>
 
-<div class="status" id="status">Noch keine CSV geladen.</div>
-
-<hr>
-
-<label>
-  Channel Titel
-  <input type="text" id="channelTitle" value="Mein CSV Feed">
-</label>
-
-<label>
-  Channel Link
-  <input type="url" id="channelLink" value="https://example.com">
-</label>
-
-<label>
-  Channel Beschreibung
-  <input type="text" id="channelDescription" value="RSS Feed aus einer CSV Datei.">
-</label>
-
-<hr>
-
-<small>Standard erwartet Kopfzeile: <code>Titel,URL,Beschreibung,Datum</code></small>
-
-<label>
-  Spaltenname für Titel
-  <input type="text" id="colTitle" value="Titel">
-</label>
-
-<label>
-  Spaltenname für Link
-  <input type="text" id="colLink" value="URL">
-</label>
-
-<label>
-  Spaltenname für Beschreibung
-  <input type="text" id="colDescription" value="Beschreibung">
-</label>
-
-<label>
-  Spaltenname für Datum
-  <input type="text" id="colPubDate" value="Datum">
-  <small>ISO Datum oder schon fertiges RSS Datum ist ok.</small>
-</label>
-
-<label>
-  Umgang mit fehlendem Datum
-  <select id="dateFallback">
-    <option value="today">Heutiges Datum einsetzen</option>
-    <option value="skip">Einträge ohne Datum überspringen</option>
-  </select>
-</label>
-
-<div class="row">
-  <button id="btnGenerate">RSS generieren</button>
-  <button id="btnCopy" class="secondary">In Zwischenablage kopieren</button>
-  <button id="btnDownload" class="secondary">rss.xml herunterladen</button>
+  <div class="status" id="status">Lade data.csv.</div>
 </div>
 
-<div class="status" id="itemInfo"></div>
-
-<label>
-  RSS Ausgabe
-  <textarea id="rssOutput" spellcheck="false"></textarea>
-</label>
+<div class="card">
+  <div class="table-wrapper">
+    <table>
+      <thead id="tableHead"></thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
+</div>
 
 <script>
-  const csvFileInput = document.getElementById("csvFile");
-  const delimiterSelect = document.getElementById("delimiter");
+  const CSV_URL = "data.csv";
+
+  const filterColumnSelect = document.getElementById("filterColumn");
+  const filterTextInput = document.getElementById("filterText");
   const statusEl = document.getElementById("status");
-  const itemInfoEl = document.getElementById("itemInfo");
-  const rssOutput = document.getElementById("rssOutput");
+  const countInfoEl = document.getElementById("countInfo");
+  const tableHead = document.getElementById("tableHead");
+  const tableBody = document.getElementById("tableBody");
 
-  const channelTitleInput = document.getElementById("channelTitle");
-  const channelLinkInput = document.getElementById("channelLink");
-  const channelDescriptionInput = document.getElementById("channelDescription");
-
-  const colTitleInput = document.getElementById("colTitle");
-  const colLinkInput = document.getElementById("colLink");
-  const colDescriptionInput = document.getElementById("colDescription");
-  const colPubDateInput = document.getElementById("colPubDate");
-  const dateFallbackSelect = document.getElementById("dateFallback");
-
-  const btnGenerate = document.getElementById("btnGenerate");
-  const btnCopy = document.getElementById("btnCopy");
-  const btnDownload = document.getElementById("btnDownload");
-
-  let currentCSVText = "";
-  let parsed = { headers: [], rows: [], delimiter: "," };
+  let headers = [];
+  let rows = [];
+  let filteredRows = [];
 
   function detectDelimiter(text) {
     const lines = text.split(/\r?\n/).slice(0, 5).filter(Boolean);
@@ -222,7 +252,6 @@
         best = k;
       }
     }
-
     return best === "tab" ? "\t" : best;
   }
 
@@ -253,14 +282,13 @@
     return result;
   }
 
-  function parseCSV(text, delimiterMode) {
+  function parseCSV(text) {
     const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
     if (!lines.length) return { headers: [], rows: [], delimiter: "," };
 
-    const delimiter = delimiterMode === "auto" ? detectDelimiter(text) :
-                      delimiterMode === "tab" ? "\t" : delimiterMode;
-
-    const headers = splitLine(lines[0], delimiter).map(h => h.trim());
+    const delimiter = detectDelimiter(text);
+    const headerLine = lines[0];
+    const headers = splitLine(headerLine, delimiter).map(h => h.trim());
     const rows = [];
 
     for (let i = 1; i < lines.length; i++) {
@@ -276,151 +304,98 @@
     return { headers, rows, delimiter };
   }
 
-  function escapeXML(str) {
-    return String(str || "")
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&apos;");
-  }
+  function renderTable() {
+    tableHead.innerHTML = "";
+    tableBody.innerHTML = "";
 
-  function toRssDate(dateString) {
-    if (!dateString) return null;
-    const d = new Date(dateString);
-    if (!isNaN(d.getTime())) return d.toUTCString();
-    const d2 = new Date(dateString.replace(/\./g, "/"));
-    if (!isNaN(d2.getTime())) return d2.toUTCString();
-    return null;
-  }
+    if (!headers.length) return;
 
-  function todayRssDate() {
-    return new Date().toUTCString();
-  }
+    const trHead = document.createElement("tr");
+    headers.forEach(h => {
+      const th = document.createElement("th");
+      th.textContent = h || "(leer)";
+      trHead.appendChild(th);
+    });
+    tableHead.appendChild(trHead);
 
-  csvFileInput.addEventListener("change", () => {
-    const file = csvFileInput.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = e => {
-      currentCSVText = e.target.result;
-      parsed = parseCSV(currentCSVText, delimiterSelect.value);
-      statusEl.textContent =
-        "CSV geladen. Spalten: " + parsed.headers.join(", ") +
-        " | Zeilen: " + parsed.rows.length;
-      itemInfoEl.textContent = "";
-    };
-    reader.readAsText(file, "utf-8");
-  });
-
-  delimiterSelect.addEventListener("change", () => {
-    if (!currentCSVText) return;
-    parsed = parseCSV(currentCSVText, delimiterSelect.value);
-    statusEl.textContent =
-      "CSV neu geparst. Spalten: " + parsed.headers.join(", ") +
-      " | Zeilen: " + parsed.rows.length;
-    itemInfoEl.textContent = "";
-  });
-
-  btnGenerate.addEventListener("click", () => {
-    if (!currentCSVText || !parsed.rows.length) {
-      alert("Bitte zuerst eine CSV laden.");
-      return;
-    }
-
-    const channelTitle = channelTitleInput.value.trim() || "CSV Feed";
-    const channelLink = channelLinkInput.value.trim() || "https://example.com";
-    const channelDescription = channelDescriptionInput.value.trim() || "RSS Feed aus CSV.";
-
-    const colTitle = colTitleInput.value.trim();
-    const colLink = colLinkInput.value.trim();
-    const colDescription = colDescriptionInput.value.trim();
-    const colPubDate = colPubDateInput.value.trim();
-    const fallbackMode = dateFallbackSelect.value;
-
-    const lines = [];
-    lines.push('<?xml version="1.0" encoding="UTF-8"?>');
-    lines.push('<rss version="2.0">');
-    lines.push("  <channel>");
-    lines.push("    <title>" + escapeXML(channelTitle) + "</title>");
-    lines.push("    <link>" + escapeXML(channelLink) + "</link>");
-    lines.push("    <description>" + escapeXML(channelDescription) + "</description>");
-    lines.push("    <lastBuildDate>" + todayRssDate() + "</lastBuildDate>");
-    lines.push("    <generator>CSV to RSS HTML Tool</generator>");
-
-    let count = 0;
-
-    parsed.rows.forEach((row, idx) => {
-      const title = colTitle ? row[colTitle] : "";
-      const link = colLink ? row[colLink] : "";
-      const desc = colDescription ? row[colDescription] : "";
-
-      let pubDateValue = "";
-      if (colPubDate && row[colPubDate]) {
-        const rssDate = toRssDate(row[colPubDate]);
-        pubDateValue = rssDate || row[colPubDate];
-      } else {
-        if (fallbackMode === "today") {
-          pubDateValue = todayRssDate();
-        } else if (fallbackMode === "skip") {
-          pubDateValue = null;
-        }
-      }
-
-      if (!title && !desc && !link) return;
-
-      lines.push("    <item>");
-      if (title) lines.push("      <title>" + escapeXML(title) + "</title>");
-      if (link) {
-        lines.push("      <link>" + escapeXML(link) + "</link>");
-        lines.push('      <guid isPermaLink="true">' + escapeXML(link) + "</guid>");
-      } else {
-        lines.push('      <guid isPermaLink="false">' + escapeXML("item-" + idx) + "</guid>");
-      }
-      if (desc) lines.push("      <description>" + escapeXML(desc) + "</description>");
-      if (pubDateValue) lines.push("      <pubDate>" + escapeXML(pubDateValue) + "</pubDate>");
-      lines.push("    </item>");
-      count++;
+    filteredRows.forEach(row => {
+      const tr = document.createElement("tr");
+      headers.forEach(h => {
+        const td = document.createElement("td");
+        td.textContent = row[h] ?? "";
+        tr.appendChild(td);
+      });
+      tableBody.appendChild(tr);
     });
 
-    lines.push("  </channel>");
-    lines.push("</rss>");
+    countInfoEl.textContent = filteredRows.length + " / " + rows.length + " Zeilen sichtbar";
+  }
 
-    rssOutput.value = lines.join("\n");
-    itemInfoEl.textContent = count + " Items im Feed.";
-  });
+  function applyFilter() {
+    const col = filterColumnSelect.value;
+    const text = filterTextInput.value.trim().toLowerCase();
 
-  btnCopy.addEventListener("click", async () => {
-    const text = rssOutput.value;
-    if (!text.trim()) {
-      alert("Noch keine RSS Ausgabe vorhanden.");
+    if (!col || text === "") {
+      filteredRows = rows.slice();
+      renderTable();
       return;
     }
-    try {
-      await navigator.clipboard.writeText(text);
-      alert("RSS in die Zwischenablage kopiert.");
-    } catch (e) {
-      alert("Kopieren nicht möglich. Text manuell markieren.");
-    }
-  });
 
-  btnDownload.addEventListener("click", () => {
-    const text = rssOutput.value;
-    if (!text.trim()) {
-      alert("Noch keine RSS Ausgabe vorhanden.");
-      return;
-    }
-    const blob = new Blob([text], { type: "application/rss+xml;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "rss.xml";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  });
+    filteredRows = rows.filter(row => {
+      const value = (row[col] || "").toLowerCase();
+      return value.includes(text);
+    });
+
+    renderTable();
+  }
+
+  function initFilterControls() {
+    filterColumnSelect.innerHTML = "";
+    headers.forEach(h => {
+      const opt = document.createElement("option");
+      opt.value = h;
+      opt.textContent = h || "(leer)";
+      filterColumnSelect.appendChild(opt);
+    });
+    filterColumnSelect.disabled = false;
+    filterTextInput.disabled = false;
+  }
+
+  fetch(CSV_URL)
+    .then(r => {
+      if (!r.ok) {
+        statusEl.textContent = "data.csv konnte nicht geladen werden. HTTP " + r.status;
+        return "";
+      }
+      return r.text();
+    })
+    .then(text => {
+      if (!text) return;
+      const parsed = parseCSV(text);
+      headers = parsed.headers;
+      rows = parsed.rows;
+      filteredRows = rows.slice();
+
+      if (!headers.length) {
+        statusEl.textContent = "Keine Headerzeile in data.csv gefunden.";
+        return;
+      }
+
+      statusEl.innerHTML =
+        "Geladen: <strong>data.csv</strong>. Spalten " +
+        headers.length + ". Zeilen " + rows.length +
+        '. Trennzeichen "' + (parsed.delimiter === "\t" ? "\\t" : parsed.delimiter) + '"';
+
+      initFilterControls();
+      renderTable();
+    })
+    .catch(err => {
+      console.error(err);
+      statusEl.textContent = "Fehler beim Laden von data.csv.";
+    });
+
+  filterColumnSelect.addEventListener("change", applyFilter);
+  filterTextInput.addEventListener("input", applyFilter);
 </script>
 
 </body>
