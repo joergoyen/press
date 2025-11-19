@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
   <meta charset="utf-8">
-  <title>data.csv Viewer</title>
+  <title>Google Sheet CSV Viewer</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <style>
@@ -176,15 +176,31 @@
     .pill-row span {
       white-space: nowrap;
     }
+
+    a.small-link {
+      font-size: 0.75rem;
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    a.small-link:hover {
+      text-decoration: underline;
+    }
   </style>
 </head>
 <body>
 
 <div class="card">
-  <h1>data.csv Viewer</h1>
+  <h1>Google Sheet CSV Viewer</h1>
   <p>
-    Lädt automatisch <code>data.csv</code> aus dem gleichen Ordner wie diese Datei.
-    Spalte wählen. Textfilter setzen. Tabelle unten aktualisiert sich.
+    Diese Seite lädt automatisch die veröffentlichte Tabelle als CSV
+    aus Google Sheets und zeigt die Inhalte filterbar an.
+  </p>
+  <p>
+    Quelle:
+    <a class="small-link" href="https://docs.google.com/spreadsheets/d/e/2PACX-1vTXM1nA4G1IsxlWP_sJ-8hPS4qVO4wm_EjItQ5GZvIGOiIZCG0iV2OBxAqhXX2_IMnw62nbxhi_Wz_P/pub?output=csv" target="_blank" rel="noopener">
+      Google Sheets · publiziert als CSV
+    </a>
   </p>
 
   <div class="row">
@@ -202,13 +218,16 @@
 
   <div class="pill-row">
     <span class="badge">
+      Quelle: Google Sheets CSV
+    </span>
+    <span class="badge">
       Trennzeichen Autoerkennung
       <code>, ; \t</code>
     </span>
     <span id="countInfo"></span>
   </div>
 
-  <div class="status" id="status">Lade data.csv.</div>
+  <div class="status" id="status">Lade Daten aus Google Tabelle …</div>
 </div>
 
 <div class="card">
@@ -221,9 +240,9 @@
 </div>
 
 <script>
-  // const CSV_URL = "data.csv";
-  const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTXM1nA4G1IsxlWP_sJ-8hPS4qVO4wm_EjItQ5GZvIGOiIZCG0iV2OBxAqhXX2_IMnw62nbxhi_Wz_P/pub?output=csv";
-
+  // Google-Sheet-CSV-URL (publizierte Tabelle)
+  const CSV_URL =
+    "https://docs.google.com/spreadsheets/d/e/2PACX-1vTXM1nA4G1IsxlWP_sJ-8hPS4qVO4wm_EjItQ5GZvIGOiIZCG0iV2OBxAqhXX2_IMnw62nbxhi_Wz_P/pub?output=csv";
 
   const filterColumnSelect = document.getElementById("filterColumn");
   const filterTextInput = document.getElementById("filterText");
@@ -366,7 +385,7 @@
   fetch(CSV_URL)
     .then(r => {
       if (!r.ok) {
-        statusEl.textContent = "data.csv konnte nicht geladen werden. HTTP " + r.status;
+        statusEl.textContent = "Google Tabelle konnte nicht geladen werden. HTTP " + r.status;
         return "";
       }
       return r.text();
@@ -379,21 +398,21 @@
       filteredRows = rows.slice();
 
       if (!headers.length) {
-        statusEl.textContent = "Keine Headerzeile in data.csv gefunden.";
+        statusEl.textContent = "Keine Headerzeile in der Google Tabelle gefunden.";
         return;
       }
 
       statusEl.innerHTML =
-        "Geladen: <strong>data.csv</strong>. Spalten " +
+        "Geladen aus Google Sheets CSV. Spalten " +
         headers.length + ". Zeilen " + rows.length +
-        '. Trennzeichen "' + (parsed.delimiter === "\t" ? "\\t" : parsed.delimiter) + '"';
+        '. Erkanntes Trennzeichen "' + (parsed.delimiter === "\t" ? "\\t" : parsed.delimiter) + '"';
 
       initFilterControls();
       renderTable();
     })
     .catch(err => {
       console.error(err);
-      statusEl.textContent = "Fehler beim Laden von data.csv.";
+      statusEl.textContent = "Fehler beim Laden der Google Tabelle.";
     });
 
   filterColumnSelect.addEventListener("change", applyFilter);
