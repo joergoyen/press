@@ -370,69 +370,56 @@
   }
 
   // ---------------------------------------------------------------------------
-  // Asset Rendering
-  // ---------------------------------------------------------------------------
-  function createAssetCellContent(filename) {
-    const container = document.createElement("div");
+// Asset Rendering
+// ---------------------------------------------------------------------------
+function createAssetCellContent(filename) {
+  const container = document.createElement("div");
 
-    const cleanName = filename.trim();
-    if (!cleanName) {
-      container.textContent = "";
-      return container;
-    }
-
-    const url = ASSET_BASE_URL + encodeURIComponent(cleanName);
-    const lower = cleanName.toLowerCase();
-
-    const isImage = lower.endsWith(".png") ||
-                    lower.endsWith(".jpg") ||
-                    lower.endsWith(".jpeg") ||
-                    lower.endsWith(".webp") ||
-                    lower.endsWith(".gif");
-
-    const isPdf = lower.endsWith(".pdf");
-
-    if (isImage) {
-      const img = document.createElement("img");
-      img.src = url;
-      img.alt = cleanName;
-      img.className = "asset-thumb";
-      container.appendChild(img);
-
-      const link = document.createElement("a");
-      link.href = url;
-      link.target = "_blank";
-      link.rel = "noopener";
-      link.className = "asset-link";
-      link.textContent = "Bild öffnen";
-      container.appendChild(link);
-    } else if (isPdf) {
-      const link = document.createElement("a");
-      link.href = url;
-      link.target = "_blank";
-      link.rel = "noopener";
-      link.className = "asset-link";
-      link.textContent = "PDF öffnen";
-      container.appendChild(link);
-
-      const info = document.createElement("div");
-      info.style.fontSize = "0.7rem";
-      info.style.color = "#9ca3af";
-      info.textContent = cleanName;
-      container.appendChild(info);
-    } else {
-      // Fallback: nur Download-Link mit Dateiname
-      const link = document.createElement("a");
-      link.href = url;
-      link.target = "_blank";
-      link.rel = "noopener";
-      link.className = "asset-link";
-      link.textContent = cleanName;
-      container.appendChild(link);
-    }
-
+  const cleanName = filename.trim();
+  if (!cleanName) {
+    container.textContent = "";
     return container;
   }
+
+  const url = ASSET_BASE_URL + encodeURIComponent(cleanName);
+  const lower = cleanName.toLowerCase();
+
+  const isImage =
+    lower.endsWith(".png") ||
+    lower.endsWith(".jpg") ||
+    lower.endsWith(".jpeg") ||
+    lower.endsWith(".webp") ||
+    lower.endsWith(".gif");
+
+  if (isImage) {
+    const img = document.createElement("img");
+    img.src = url;
+    img.alt = cleanName;
+    img.className = "asset-thumb";
+    container.appendChild(img);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.target = "_blank";
+    link.rel = "noopener";
+    link.className = "asset-link";
+    link.textContent = "Bild öffnen";
+    container.appendChild(link);
+
+  } else {
+    // Fallback: nur Link mit Dateinamen
+    const link = document.createElement("a");
+    link.href = url;
+    link.target = "_blank";
+    link.rel = "noopener";
+    link.className = "asset-link";
+    link.textContent = cleanName;
+    container.appendChild(link);
+  }
+
+  return container;
+}
+
 
   // ---------------------------------------------------------------------------
   // Table Rendering
