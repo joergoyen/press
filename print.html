@@ -1,0 +1,391 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <title>Sheet Print View</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #0b1120;
+      --fg: #e5e7eb;
+      --muted: #9ca3af;
+      --border: #1f2937;
+      --accent: #3b82f6;
+      --card: #020617;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 16px;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #0f172a, #020617);
+      color: var(--fg);
+    }
+
+    h1 {
+      margin: 0 0 4px;
+      font-size: 1.15rem;
+    }
+
+    p {
+      margin: 0 0 10px;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    #controls {
+      background: var(--card);
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      padding: 12px 14px;
+      margin-bottom: 12px;
+    }
+
+    #records {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .record {
+      background: var(--card);
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      padding: 16px 18px;
+      page-break-inside: avoid;
+    }
+
+    .record-header {
+      margin-bottom: 8px;
+    }
+
+    .record-title {
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin: 0;
+    }
+
+    .record-meta {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .record-body {
+      margin-top: 10px;
+      font-size: 0.9rem;
+    }
+
+    .record-body p {
+      margin-bottom: 6px;
+    }
+
+    .label {
+      font-weight: 600;
+    }
+
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    .asset-thumb {
+      max-width: 160px;
+      max-height: 120px;
+      border-radius: 4px;
+      border: 1px solid #111827;
+      display: block;
+      margin-top: 6px;
+    }
+
+    .asset-note {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    /* PRINT CSS ------------------------------------------------------------ */
+    @media print {
+      body {
+        background: #ffffff;
+        color: #000000;
+        padding: 0;
+      }
+
+      #controls {
+        display: none !important;
+      }
+
+      .record {
+        border: none;
+        border-radius: 0;
+        background: #ffffff;
+        page-break-after: always;
+        margin: 0;
+      }
+
+      .record:last-child {
+        page-break-after: auto;
+      }
+
+      .record-title {
+        font-size: 1.2rem;
+      }
+
+      a {
+        color: #000000;
+        text-decoration: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div id="controls">
+  <h1>Sheet Print View</h1>
+  <p>
+    Lädt Daten aus der Google-Tabelle und erstellt pro Zeile eine Seite.
+    Über den Browserdruck (<kbd>Cmd/Ctrl + P</kbd>) als PDF sichern.
+  </p>
+  <p style="font-size:0.8rem;color:var(--muted);">
+    Datenquelle:
+    <a href="https://docs.google.com/spreadsheets/d/1kR_UyqpCmCfE_kOnQTEpFZGB1qXcerf_c5Y-q0ctQ9s/edit#gid=0"
+       target="_blank" rel="noopener">Google Sheet · data</a>
+  </p>
+</div>
+
+<div id="records"></div>
+
+<script>
+  // ---------------------------------------------------------------------------
+  // KONFIGURATION
+  // ---------------------------------------------------------------------------
+  // CSV-Publish-URL deines Sheets (File → Freigeben → Veröffentlichen → CSV)
+  // Falls du schon eine publizierte URL wie vorher nutzt, kannst du die hier einsetzen.
+  const CSV_URL =
+    "https://docs.google.com/spreadsheets/d/1kR_UyqpCmCfE_kOnQTEpFZGB1qXcerf_c5Y-q0ctQ9s/export?format=csv&gid=0";
+
+  // Optional: Asset-Spalte und Basis-URL (wenn du Bilder einbetten willst)
+  const ASSET_COLUMN = "Asset"; // anpassen oder leer lassen, falls nicht vorhanden
+  const ASSET_BASE_URL = "https://joergoyen.github.io/press/assets/"; // optional
+
+  const recordsContainer = document.getElementById("records");
+
+  let headers = [];
+  let rows = [];
+
+  // ---------------------------------------------------------------------------
+  // CSV Parsing
+  // ---------------------------------------------------------------------------
+  function detectDelimiter(text) {
+    const lines = text.split(/\r?\n/).slice(0, 5).filter(Boolean);
+    const counts = { ",": 0, ";": 0, tab: 0 };
+
+    lines.forEach(line => {
+      counts[","] += (line.match(/,/g) || []).length;
+      counts[";"] += (line.match(/;/g) || []).length;
+      counts["tab"] += (line.match(/\t/g) || []).length;
+    });
+
+    let best = ",";
+    let max = -1;
+    for (const k in counts) {
+      if (counts[k] > max) {
+        max = counts[k];
+        best = k;
+      }
+    }
+    return best === "tab" ? "\t" : best;
+  }
+
+  function splitLine(line, d) {
+    const result = [];
+    let current = "";
+    let inQuotes = false;
+
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      const next = line[i + 1];
+
+      if (ch === '"') {
+        if (inQuotes && next === '"') {
+          current += '"';
+          i++;
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (ch === d && !inQuotes) {
+        result.push(current);
+        current = "";
+      } else {
+        current += ch;
+      }
+    }
+    result.push(current);
+    return result;
+  }
+
+  function parseCSV(text) {
+    const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
+    if (!lines.length) return { headers: [], rows: [], delimiter: "," };
+
+    const delimiter = detectDelimiter(text);
+    const headerLine = lines[0];
+    const headers = splitLine(headerLine, delimiter).map(h => h.trim());
+    const rows = [];
+
+    for (let i = 1; i < lines.length; i++) {
+      const parts = splitLine(lines[i], delimiter);
+      if (parts.every(p => p.trim().length === 0)) continue;
+      const row = {};
+      headers.forEach((h, idx) => {
+        row[h] = (parts[idx] || "").trim();
+      });
+      rows.push(row);
+    }
+
+    return { headers, rows, delimiter };
+  }
+
+  // ---------------------------------------------------------------------------
+  // Render: pro Zeile eine "Card"/Seite
+  // ---------------------------------------------------------------------------
+  function createRecordElement(row) {
+    const div = document.createElement("div");
+    div.className = "record";
+
+    const header = document.createElement("div");
+    header.className = "record-header";
+
+    // Heuristik für Titel/Meta
+    const titleText = row["Titel"] || row["Title"] || row["Name"] || "(ohne Titel)";
+    const dateText = row["Datum"] || row["Date"] || "";
+    const categoryText = row["Kategorie"] || row["Category"] || "";
+
+    const h2 = document.createElement("h2");
+    h2.className = "record-title";
+    h2.textContent = titleText;
+    header.appendChild(h2);
+
+    if (categoryText || dateText) {
+      const meta = document.createElement("div");
+      meta.className = "record-meta";
+      meta.textContent = [categoryText, dateText].filter(Boolean).join(" · ");
+      header.appendChild(meta);
+    }
+
+    div.appendChild(header);
+
+    const body = document.createElement("div");
+    body.className = "record-body";
+
+    // Beschreibung
+    if (row["Beschreibung"] || row["Description"]) {
+      const p = document.createElement("p");
+      p.innerHTML =
+        '<span class="label">Beschreibung:</span><br>' +
+        (row["Beschreibung"] || row["Description"]);
+      body.appendChild(p);
+    }
+
+    // URL
+    if (row["URL"]) {
+      const p = document.createElement("p");
+      const a = document.createElement("a");
+      a.href = row["URL"];
+      a.target = "_blank";
+      a.rel = "noopener";
+      a.textContent = row["URL"];
+      const span = document.createElement("span");
+      span.className = "label";
+      span.textContent = "URL: ";
+      p.appendChild(span);
+      p.appendChild(document.createElement("br"));
+      p.appendChild(a);
+      body.appendChild(p);
+    }
+
+    // Restliche Felder generisch anhängen, die nicht schon oben verbaut wurden
+    Object.keys(row).forEach(key => {
+      if (!row[key]) return;
+      if (["Titel", "Title", "Name", "Kategorie", "Category", "Datum", "Date", "Beschreibung", "Description", "URL", ASSET_COLUMN].includes(key)) {
+        return;
+      }
+
+      const p = document.createElement("p");
+      const label = document.createElement("span");
+      label.className = "label";
+      label.textContent = key + ": ";
+      p.appendChild(label);
+      p.appendChild(document.createElement("br"));
+      p.appendChild(document.createTextNode(row[key]));
+      body.appendChild(p);
+    });
+
+    // Asset (Bild) falls vorhanden
+    if (ASSET_COLUMN && row[ASSET_COLUMN]) {
+      const filename = row[ASSET_COLUMN].trim();
+      if (filename) {
+        const url = ASSET_BASE_URL + encodeURIComponent(filename);
+        const img = document.createElement("img");
+        img.src = url;
+        img.alt = filename;
+        img.className = "asset-thumb";
+        body.appendChild(img);
+
+        const note = document.createElement("div");
+        note.className = "asset-note";
+        note.textContent = filename;
+        body.appendChild(note);
+      }
+    }
+
+    div.appendChild(body);
+    return div;
+  }
+
+  function renderRecords() {
+    recordsContainer.innerHTML = "";
+    rows.forEach(row => {
+      if (Object.values(row).every(v => !v || String(v).trim() === "")) return;
+      const el = createRecordElement(row);
+      recordsContainer.appendChild(el);
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Fetch + Init
+  // ---------------------------------------------------------------------------
+  fetch(CSV_URL)
+    .then(r => {
+      if (!r.ok) {
+        recordsContainer.innerHTML =
+          "<p style='color:#f87171'>CSV konnte nicht geladen werden. HTTP " +
+          r.status + "</p>";
+        return "";
+      }
+      return r.text();
+    })
+    .then(text => {
+      if (!text) return;
+      const parsed = parseCSV(text);
+      headers = parsed.headers;
+      rows = parsed.rows;
+      renderRecords();
+    })
+    .catch(err => {
+      console.error(err);
+      recordsContainer.innerHTML =
+        "<p style='color:#f87171'>Fehler beim Laden der Daten.</p>";
+    });
+</script>
+</body>
+</html>
