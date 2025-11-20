@@ -1,0 +1,715 @@
+<!doctype html>
+<html lang="de">
+<head>
+  
+  <link rel="icon" type="image/png" href="assets/logo-512.png">
+  <link rel="icon" type="image/webp" href="assets/logo-512.webp">
+  <link rel="shortcut icon" href="assets/logo-512.png">
+  <link rel="apple-touch-icon" href="assets/logo-512.png">
+
+  <meta charset="utf-8">
+  <title>Sheet + Assets Viewer</title>
+  
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="viewport" content="width = device-width, initial-scale = 1.0, minimum-scale = 1, maximum-scale = 1, user-scalable = no,  viewport-fit=cover">
+  <meta name="apple-mobile-web-app-title" content="press">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="assets/logo-512.png">
+
+  <style>
+    :root {
+      padding-top: env(safe-area-inset-top);
+      padding-left: env(safe-area-inset-left);
+      padding-right: env(safe-area-inset-right);
+      padding-bottom: env(safe-area-inset-bottom);
+
+      color-scheme: light dark;
+      --bg: #0b1120;
+      --fg: #e5e7eb;
+      --muted: #9ca3af;
+      --border: #1f2937;
+      --accent: #3b82f6;
+      --accent-soft: rgba(59,130,246,0.25);
+      --card: #020617;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 16px;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #0f172a, #020617);
+      color: var(--fg);
+    }
+
+    h1 {
+      margin: 0 0 4px;
+      font-size: 1.15rem;
+    }
+
+    p {
+      margin: 0 0 10px;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      padding: 12px 14px;
+      margin-bottom: 12px;
+    }
+
+    label {
+      font-size: 0.8rem;
+      color: var(--muted);
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      font-family: inherit;
+      font-size: 0.85rem;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: #020617;
+      color: var(--fg);
+      outline: none;
+    }
+
+    input[type="text"]:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent-soft);
+    }
+
+    .status {
+      margin-top: 6px;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    .status strong {
+      color: var(--accent);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.8rem;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    thead {
+      background: #020617;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+
+    th, td {
+      border-bottom: 1px solid #111827;
+      padding: 4px 6px;
+      text-align: left;
+      vertical-align: top;
+      max-width: 280px;
+      word-wrap: break-word;
+      word-break: break-word;
+    }
+
+    th {
+      font-weight: 600;
+      font-size: 0.78rem;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    tbody tr:nth-child(odd) {
+      background: rgba(15,23,42,0.7);
+    }
+
+    tbody tr:nth-child(even) {
+      background: rgba(15,23,42,0.35);
+    }
+
+    .table-wrapper {
+      margin-top: 8px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      max-height: 70vh;
+      overflow: auto;
+      background: #020617;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.7rem;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+
+    .badge code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+      font-size: 0.7rem;
+    }
+
+    .pill-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-top: 6px;
+      font-size: 0.75rem;
+      color: var(--muted);
+      flex-wrap: wrap;
+    }
+
+    .pill-row span {
+      white-space: nowrap;
+    }
+
+    a.small-link {
+      font-size: 0.75rem;
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    a.small-link:hover {
+      text-decoration: underline;
+    }
+
+    .asset-thumb {
+      max-width: 120px;
+      max-height: 80px;
+      display: block;
+      border-radius: 4px;
+      border: 1px solid #111827;
+      margin-bottom: 4px;
+    }
+
+    .asset-link {
+      font-size: 0.75rem;
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .asset-link:hover {
+      text-decoration: underline;
+    }
+
+    /* Toolbar oben mit Zahnrad + Suche */
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .icon-btn {
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: #020617;
+      color: var(--muted);
+      width: 28px;
+      height: 28px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      padding: 0;
+      font-size: 0.85rem;
+    }
+
+    .icon-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .toolbar input[type="text"] {
+      flex: 1;
+    }
+
+    .column-panel {
+      position: absolute;
+      margin-top: 4px;
+      padding: 8px 10px;
+      background: #020617;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+      min-width: 200px;
+      max-width: 260px;
+      max-height: 260px;
+      overflow: auto;
+      font-size: 0.8rem;
+      z-index: 10;
+    }
+
+    .column-panel.hidden {
+      display: none;
+    }
+
+    .column-panel h2 {
+      font-size: 0.8rem;
+      margin: 0 0 6px;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .column-panel label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 4px;
+      cursor: pointer;
+    }
+
+    .column-panel input[type="checkbox"] {
+      width: 14px;
+      height: 14px;
+      margin: 0;
+    }
+
+    .card-header {
+      position: relative;
+    }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <div class="card-header">
+    <h1>Sheet + Assets Viewer</h1>
+    <p>
+      Daten kommen aus einer veröffentlichten Google-Tabelle (CSV).
+      Eine Spalte enthält Dateinamen für Assets auf GitHub.
+    </p>
+    <p>
+      Quelle:
+      <a class="small-link" href="https://docs.google.com/spreadsheets/d/e/2PACX-1vTXM1nA4G1IsxlWP_sJ-8hPS4qVO4wm_EjItQ5GZvIGOiIZCG0iV2OBxAqhXX2_IMnw62nbxhi_Wz_P/pub?output=csv" target="_blank" rel="noopener">
+        Google Sheets · publiziert als CSV
+      </a>
+    </p>
+
+    <div class="toolbar">
+      <button id="settingsBtn" class="icon-btn" type="button" aria-label="Spalten ein- und ausblenden">
+        ⚙
+      </button>
+      <input
+        type="text"
+        id="filterText"
+        placeholder="Suche in sichtbaren Spalten"
+        disabled
+      >
+    </div>
+
+    <div id="columnPanel" class="column-panel hidden"></div>
+  </div>
+
+  <div class="pill-row">
+    <span class="badge">
+      Quelle: Google Sheets CSV
+    </span>
+    <span class="badge">
+      Assets: GitHub Folder
+    </span>
+    <span class="badge">
+      Trennzeichen Autoerkennung
+      <code>, ; \t</code>
+    </span>
+    <span id="countInfo"></span>
+  </div>
+
+  <div class="status" id="status">Lade Daten aus Google Tabelle …</div>
+</div>
+
+<div class="card">
+  <div class="table-wrapper">
+    <table>
+      <thead id="tableHead"></thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  // ---------------------------------------------------------------------------
+  // KONFIGURATION
+  // ---------------------------------------------------------------------------
+
+  // 1) Google-Sheet-CSV-URL
+  const CSV_URL =
+    "https://docs.google.com/spreadsheets/d/e/2PACX-1vTXM1nA4G1IsxlWP_sJ-8hPS4qVO4wm_EjItQ5GZvIGOiIZCG0iV2OBxAqhXX2_IMnw62nbxhi_Wz_P/pub?output=csv";
+
+  // 2) GitHub-Asset-Basis-URL
+  const ASSET_BASE_URL =
+    "https://joergoyen.github.io/press/assets/"; // anpassen
+
+  // 3) Spaltenname im Sheet für Dateinamen
+  const ASSET_COLUMN = "Asset"; // anpassen
+
+  // ---------------------------------------------------------------------------
+  // DOM
+  // ---------------------------------------------------------------------------
+  const filterTextInput = document.getElementById("filterText");
+  const settingsBtn = document.getElementById("settingsBtn");
+  const columnPanel = document.getElementById("columnPanel");
+  const statusEl = document.getElementById("status");
+  const countInfoEl = document.getElementById("countInfo");
+  const tableHead = document.getElementById("tableHead");
+  const tableBody = document.getElementById("tableBody");
+
+  let headers = [];
+  let rows = [];
+  let filteredRows = [];
+  let visibleColumns = new Set();
+
+  // ---------------------------------------------------------------------------
+  // Sichtbarkeits-Konfiguration (localStorage)
+  // ---------------------------------------------------------------------------
+  const STORAGE_KEY_VISIBLE = "press.visibleColumns";
+
+  function saveVisibleColumns() {
+    try {
+      const arr = Array.from(visibleColumns);
+      localStorage.setItem(STORAGE_KEY_VISIBLE, JSON.stringify(arr));
+    } catch (e) {
+      // Ignorieren, falls localStorage nicht verfügbar ist
+    }
+  }
+
+  function loadVisibleColumns() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY_VISIBLE);
+      if (!raw) return;
+
+      const arr = JSON.parse(raw);
+      if (!Array.isArray(arr)) return;
+
+      // Nur Spalten übernehmen, die es noch gibt
+      const valid = arr.filter(h => headers.includes(h));
+      if (!valid.length) return;
+
+      visibleColumns = new Set(valid);
+    } catch (e) {
+      // Ignorieren bei Parsing-Fehlern
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // CSV Parsing
+  // ---------------------------------------------------------------------------
+  function detectDelimiter(text) {
+    const lines = text.split(/\r?\n/).slice(0, 5).filter(Boolean);
+    const counts = { ",": 0, ";": 0, tab: 0 };
+
+    lines.forEach(line => {
+      counts[","] += (line.match(/,/g) || []).length;
+      counts[";"] += (line.match(/;/g) || []).length;
+      counts["tab"] += (line.match(/\t/g) || []).length;
+    });
+
+    let best = ",";
+    let max = -1;
+    for (const k in counts) {
+      if (counts[k] > max) {
+        max = counts[k];
+        best = k;
+      }
+    }
+    return best === "tab" ? "\t" : best;
+  }
+
+  function splitLine(line, d) {
+    const result = [];
+    let current = "";
+    let inQuotes = false;
+
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      const next = line[i + 1];
+
+      if (ch === '"') {
+        if (inQuotes && next === '"') {
+          current += '"';
+          i++;
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (ch === d && !inQuotes) {
+        result.push(current);
+        current = "";
+      } else {
+        current += ch;
+      }
+    }
+    result.push(current);
+    return result;
+  }
+
+  function parseCSV(text) {
+    const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
+    if (!lines.length) return { headers: [], rows: [], delimiter: "," };
+
+    const delimiter = detectDelimiter(text);
+    const headerLine = lines[0];
+    const headers = splitLine(headerLine, delimiter).map(h => h.trim());
+    const rows = [];
+
+    for (let i = 1; i < lines.length; i++) {
+      const parts = splitLine(lines[i], delimiter);
+      if (parts.every(p => p.trim().length === 0)) continue;
+      const row = {};
+      headers.forEach((h, idx) => {
+        row[h] = (parts[idx] || "").trim();
+      });
+      rows.push(row);
+    }
+
+    return { headers, rows, delimiter };
+  }
+
+  // ---------------------------------------------------------------------------
+  // Asset Rendering
+  // ---------------------------------------------------------------------------
+  function createAssetCellContent(filename) {
+    const container = document.createElement("div");
+
+    const cleanName = filename.trim();
+    if (!cleanName) {
+      container.textContent = "";
+      return container;
+    }
+
+    const url = ASSET_BASE_URL + encodeURIComponent(cleanName);
+    const lower = cleanName.toLowerCase();
+
+    const isImage =
+      lower.endsWith(".png") ||
+      lower.endsWith(".jpg") ||
+      lower.endsWith(".jpeg") ||
+      lower.endsWith(".webp") ||
+      lower.endsWith(".gif");
+
+    if (isImage) {
+      const img = document.createElement("img");
+      img.src = url;
+      img.alt = cleanName;
+      img.className = "asset-thumb";
+      container.appendChild(img);
+
+      const link = document.createElement("a");
+      link.href = url;
+      link.target = "_blank";
+      link.rel = "noopener";
+      link.className = "asset-link";
+      link.textContent = "Bild öffnen";
+      container.appendChild(link);
+    } else {
+      const link = document.createElement("a");
+      link.href = url;
+      link.target = "_blank";
+      link.rel = "noopener";
+      link.className = "asset-link";
+      link.textContent = cleanName;
+      container.appendChild(link);
+    }
+
+    return container;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Table Rendering
+  // ---------------------------------------------------------------------------
+  function renderTable() {
+    tableHead.innerHTML = "";
+    tableBody.innerHTML = "";
+
+    if (!headers.length) return;
+
+    const trHead = document.createElement("tr");
+    headers.forEach(h => {
+      if (!visibleColumns.has(h)) return;
+      const th = document.createElement("th");
+      th.textContent = h || "(leer)";
+      trHead.appendChild(th);
+    });
+    tableHead.appendChild(trHead);
+
+    filteredRows.forEach(row => {
+      const tr = document.createElement("tr");
+      headers.forEach(h => {
+        if (!visibleColumns.has(h)) return;
+
+        const td = document.createElement("td");
+        const value = (row[h] ?? "").trim();
+
+        if (h === ASSET_COLUMN && value) {
+          const content = createAssetCellContent(value);
+          td.appendChild(content);
+
+        } else if (h === "URL" && value) {
+          const a = document.createElement("a");
+          a.href = value;
+          a.target = "_blank";
+          a.rel = "noopener";
+          a.className = "asset-link";
+          a.textContent = value;
+          td.appendChild(a);
+
+        } else {
+          td.textContent = value;
+        }
+
+        tr.appendChild(td);
+      });
+      tableBody.appendChild(tr);
+    });
+
+    countInfoEl.textContent =
+      filteredRows.length + " / " + rows.length + " Zeilen sichtbar";
+  }
+
+  // ---------------------------------------------------------------------------
+  // Suche über alle sichtbaren Spalten
+  // ---------------------------------------------------------------------------
+  function applyFilter() {
+    const text = filterTextInput.value.trim().toLowerCase();
+
+    if (!text) {
+      filteredRows = rows.slice();
+      renderTable();
+      return;
+    }
+
+    filteredRows = rows.filter(row => {
+      for (const h of headers) {
+        if (!visibleColumns.has(h)) continue;
+        const value = (row[h] || "").toLowerCase();
+        if (value.includes(text)) {
+          return true;
+        }
+      }
+      return false;
+    });
+
+    renderTable();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Spaltenpanel (Zahnrad)
+  // ---------------------------------------------------------------------------
+  function buildColumnPanel() {
+    columnPanel.innerHTML = "";
+    const title = document.createElement("h2");
+    title.textContent = "Spalten ein/ausblenden";
+    columnPanel.appendChild(title);
+
+    headers.forEach(h => {
+      const label = document.createElement("label");
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.checked = visibleColumns.has(h);
+      cb.addEventListener("change", () => {
+        if (cb.checked) {
+          visibleColumns.add(h);
+        } else {
+          visibleColumns.delete(h);
+        }
+        saveVisibleColumns();
+        applyFilter();
+      });
+      const span = document.createElement("span");
+      span.textContent = h || "(leer)";
+      label.appendChild(cb);
+      label.appendChild(span);
+      columnPanel.appendChild(label);
+    });
+  }
+
+  function toggleColumnPanel() {
+    columnPanel.classList.toggle("hidden");
+  }
+
+  // ---------------------------------------------------------------------------
+  // Init
+  // ---------------------------------------------------------------------------
+  fetch(CSV_URL)
+    .then(r => {
+      if (!r.ok) {
+        statusEl.textContent =
+          "Google Tabelle konnte nicht geladen werden. HTTP " + r.status;
+        return "";
+      }
+      return r.text();
+    })
+    .then(text => {
+      if (!text) return;
+      const parsed = parseCSV(text);
+      headers = parsed.headers;
+      rows = parsed.rows;
+      filteredRows = rows.slice();
+
+      if (!headers.length) {
+        statusEl.textContent = "Keine Headerzeile in der Google Tabelle gefunden.";
+        return;
+      }
+
+      // Standard: alle Spalten sichtbar
+      visibleColumns = new Set(headers);
+      // Sichtbarkeits-Konfiguration aus localStorage anwenden
+      loadVisibleColumns();
+
+      statusEl.innerHTML =
+        "Geladen aus Google Sheets CSV. Spalten " +
+        headers.length + ". Zeilen " + rows.length +
+        '. Erkanntes Trennzeichen "' +
+        (parsed.delimiter === "\t" ? "\\t" : parsed.delimiter) + '"';
+
+      filterTextInput.disabled = false;
+      buildColumnPanel();
+      applyFilter(); // nutzt sichtbare Spalten + Filterzustand
+    })
+    .catch(err => {
+      console.error(err);
+      statusEl.textContent = "Fehler beim Laden der Google Tabelle.";
+    });
+
+  // Events
+  filterTextInput.addEventListener("input", applyFilter);
+  settingsBtn.addEventListener("click", toggleColumnPanel);
+
+  // Panel schließen, wenn man daneben klickt
+  document.addEventListener("click", (e) => {
+    if (
+      e.target === settingsBtn ||
+      settingsBtn.contains(e.target) ||
+      columnPanel.contains(e.target)
+    ) {
+      return;
+    }
+    columnPanel.classList.add("hidden");
+  });
+</script>
+
+<script>
+  // iOS-URL-Bar ausblenden für App-Feeling
+  window.addEventListener("load", function () {
+    setTimeout(() => {
+      window.scrollTo(0, 1);
+    }, 50);
+  });
+</script>
+
+</body>
+</html>
