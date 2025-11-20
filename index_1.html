@@ -421,7 +421,7 @@ function createAssetCellContent(filename) {
 }
 
 
-  // ---------------------------------------------------------------------------
+    // ---------------------------------------------------------------------------
   // Table Rendering
   // ---------------------------------------------------------------------------
   function renderTable() {
@@ -442,12 +442,26 @@ function createAssetCellContent(filename) {
       const tr = document.createElement("tr");
       headers.forEach(h => {
         const td = document.createElement("td");
+        const value = (row[h] ?? "").trim();
 
-        if (h === ASSET_COLUMN && row[h]) {
-          const content = createAssetCellContent(row[h]);
+        if (h === ASSET_COLUMN && value) {
+          // Assets (Bilder, Dateien) über GitHub
+          const content = createAssetCellContent(value);
           td.appendChild(content);
+
+        } else if (h === "URL" && value) {
+          // URL-Spalte als klickbaren Link ausgeben
+          const a = document.createElement("a");
+          a.href = value;
+          a.target = "_blank";
+          a.rel = "noopener";
+          a.className = "asset-link";
+          a.textContent = value;
+          td.appendChild(a);
+
         } else {
-          td.textContent = row[h] ?? "";
+          // Standard: reiner Text
+          td.textContent = value;
         }
 
         tr.appendChild(td);
@@ -459,23 +473,6 @@ function createAssetCellContent(filename) {
       filteredRows.length + " / " + rows.length + " Zeilen sichtbar";
   }
 
-  function applyFilter() {
-    const col = filterColumnSelect.value;
-    const text = filterTextInput.value.trim().toLowerCase();
-
-    if (!col || text === "") {
-      filteredRows = rows.slice();
-      renderTable();
-      return;
-    }
-
-    filteredRows = rows.filter(row => {
-      const value = (row[col] || "").toLowerCase();
-      return value.includes(text);
-    });
-
-    renderTable();
-  }
 
   function initFilterControls() {
     filterColumnSelect.innerHTML = "";
