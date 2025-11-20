@@ -421,7 +421,7 @@ function createAssetCellContent(filename) {
 }
 
 
-    // ---------------------------------------------------------------------------
+   // ---------------------------------------------------------------------------
   // Table Rendering
   // ---------------------------------------------------------------------------
   function renderTable() {
@@ -473,6 +473,27 @@ function createAssetCellContent(filename) {
       filteredRows.length + " / " + rows.length + " Zeilen sichtbar";
   }
 
+  // ---------------------------------------------------------------------------
+  // Filter-Logik (wieder hinzufügen!)
+  // ---------------------------------------------------------------------------
+  function applyFilter() {
+    const col = filterColumnSelect.value;
+    const text = filterTextInput.value.trim().toLowerCase();
+
+    // Kein Filter gesetzt → alle Zeilen anzeigen
+    if (!col || text === "") {
+      filteredRows = rows.slice();
+      renderTable();
+      return;
+    }
+
+    filteredRows = rows.filter(row => {
+      const value = (row[col] || "").toLowerCase();
+      return value.includes(text);
+    });
+
+    renderTable();
+  }
 
   function initFilterControls() {
     filterColumnSelect.innerHTML = "";
@@ -485,6 +506,7 @@ function createAssetCellContent(filename) {
     filterColumnSelect.disabled = false;
     filterTextInput.disabled = false;
   }
+
 
   // ---------------------------------------------------------------------------
   // Fetch + Init
