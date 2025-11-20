@@ -1,0 +1,548 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <title>Sheet + Assets Viewer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #0b1120;
+      --fg: #e5e7eb;
+      --muted: #9ca3af;
+      --border: #1f2937;
+      --accent: #3b82f6;
+      --accent-soft: rgba(59,130,246,0.25);
+      --card: #020617;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 16px;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #0f172a, #020617);
+      color: var(--fg);
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 1.15rem;
+    }
+
+    p {
+      margin: 0 0 10px;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      padding: 12px 14px;
+      margin-bottom: 12px;
+    }
+
+    label {
+      font-size: 0.8rem;
+      color: var(--muted);
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    input[type="text"],
+    select {
+      width: 100%;
+      font-family: inherit;
+      font-size: 0.85rem;
+      padding: 6px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: #020617;
+      color: var(--fg);
+      outline: none;
+    }
+
+    input[type="text"]:focus,
+    select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent-soft);
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    @media (max-width: 720px) {
+      .row {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    .status {
+      margin-top: 6px;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    .status strong {
+      color: var(--accent);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.8rem;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    thead {
+      background: #020617;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+
+    th, td {
+      border-bottom: 1px solid #111827;
+      padding: 4px 6px;
+      text-align: left;
+      vertical-align: top;
+      max-width: 280px;
+      word-wrap: break-word;
+      word-break: break-word;
+    }
+
+    th {
+      font-weight: 600;
+      font-size: 0.78rem;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    tbody tr:nth-child(odd) {
+      background: rgba(15,23,42,0.7);
+    }
+
+    tbody tr:nth-child(even) {
+      background: rgba(15,23,42,0.35);
+    }
+
+    .table-wrapper {
+      margin-top: 8px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      max-height: 70vh;
+      overflow: auto;
+      background: #020617;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.7rem;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+
+    .badge code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+      font-size: 0.7rem;
+    }
+
+    .pill-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-top: 6px;
+      font-size: 0.75rem;
+      color: var(--muted);
+      flex-wrap: wrap;
+    }
+
+    .pill-row span {
+      white-space: nowrap;
+    }
+
+    a.small-link {
+      font-size: 0.75rem;
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    a.small-link:hover {
+      text-decoration: underline;
+    }
+
+    .asset-thumb {
+      max-width: 120px;
+      max-height: 80px;
+      display: block;
+      border-radius: 4px;
+      border: 1px solid #111827;
+      margin-bottom: 4px;
+    }
+
+    .asset-link {
+      font-size: 0.75rem;
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .asset-link:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <h1>Sheet + Assets Viewer</h1>
+  <p>
+    Daten kommen aus einer veröffentlichten Google-Tabelle (CSV).
+    Eine Spalte enthält Dateinamen. Dateien liegen in einem GitHub-Folder
+    und werden unten als Bild-Preview oder Link angezeigt.
+  </p>
+  <p>
+    Quelle:
+    <a class="small-link" href="https://docs.google.com/spreadsheets/d/e/2PACX-1vTXM1nA4G1IsxlWP_sJ-8hPS4qVO4wm_EjItQ5GZvIGOiIZCG0iV2OBxAqhXX2_IMnw62nbxhi_Wz_P/pub?output=csv" target="_blank" rel="noopener">
+      Google Sheets · publiziert als CSV
+    </a>
+  </p>
+
+  <div class="row">
+    <div>
+      <label for="filterColumn">Filter Spalte</label>
+      <select id="filterColumn" disabled>
+        <option value="">Noch keine Daten</option>
+      </select>
+    </div>
+    <div>
+      <label for="filterText">Filter Text (enthält, case insensitive)</label>
+      <input type="text" id="filterText" placeholder="Suchwort" disabled>
+    </div>
+  </div>
+
+  <div class="pill-row">
+    <span class="badge">
+      Quelle: Google Sheets CSV
+    </span>
+    <span class="badge">
+      Assets: GitHub Folder
+    </span>
+    <span class="badge">
+      Trennzeichen Autoerkennung
+      <code>, ; \t</code>
+    </span>
+    <span id="countInfo"></span>
+  </div>
+
+  <div class="status" id="status">Lade Daten aus Google Tabelle …</div>
+</div>
+
+<div class="card">
+  <div class="table-wrapper">
+    <table>
+      <thead id="tableHead"></thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  // ---------------------------------------------------------------------------
+  // KONFIGURATION
+  // ---------------------------------------------------------------------------
+
+  // 1) Google-Sheet-CSV-URL
+  const CSV_URL =
+    "https://docs.google.com/spreadsheets/d/e/2PACX-1vTXM1nA4G1IsxlWP_sJ-8hPS4qVO4wm_EjItQ5GZvIGOiIZCG0iV2OBxAqhXX2_IMnw62nbxhi_Wz_P/pub?output=csv";
+
+  // 2) GitHub-Asset-Basis-URL (Beispiel: Raw- oder Pages-URL)
+  //    Beispiel Raw:
+  //    https://raw.githubusercontent.com/<user>/<repo>/<branch>/assets/
+  //    Beispiel GitHub Pages:
+  //    https://<user>.github.io/<repo>/assets/
+  const ASSET_BASE_URL =
+    "https://joergoyen.github.io/press/assets/"; // ANPASSEN
+
+  // 3) Spaltenname im Sheet, der den Dateinamen enthält
+  const ASSET_COLUMN = "Asset"; // ANPASSEN: z.B. "asset", "file", "image"
+
+  // ---------------------------------------------------------------------------
+  // DOM
+  // ---------------------------------------------------------------------------
+  const filterColumnSelect = document.getElementById("filterColumn");
+  const filterTextInput = document.getElementById("filterText");
+  const statusEl = document.getElementById("status");
+  const countInfoEl = document.getElementById("countInfo");
+  const tableHead = document.getElementById("tableHead");
+  const tableBody = document.getElementById("tableBody");
+
+  let headers = [];
+  let rows = [];
+  let filteredRows = [];
+
+  // ---------------------------------------------------------------------------
+  // CSV Parsing
+  // ---------------------------------------------------------------------------
+  function detectDelimiter(text) {
+    const lines = text.split(/\r?\n/).slice(0, 5).filter(Boolean);
+    const counts = { ",": 0, ";": 0, tab: 0 };
+
+    lines.forEach(line => {
+      counts[","] += (line.match(/,/g) || []).length;
+      counts[";"] += (line.match(/;/g) || []).length;
+      counts["tab"] += (line.match(/\t/g) || []).length;
+    });
+
+    let best = ",";
+    let max = -1;
+    for (const k in counts) {
+      if (counts[k] > max) {
+        max = counts[k];
+        best = k;
+      }
+    }
+    return best === "tab" ? "\t" : best;
+  }
+
+  function splitLine(line, d) {
+    const result = [];
+    let current = "";
+    let inQuotes = false;
+
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      const next = line[i + 1];
+
+      if (ch === '"') {
+        if (inQuotes && next === '"') {
+          current += '"';
+          i++;
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (ch === d && !inQuotes) {
+        result.push(current);
+        current = "";
+      } else {
+        current += ch;
+      }
+    }
+    result.push(current);
+    return result;
+  }
+
+  function parseCSV(text) {
+    const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
+    if (!lines.length) return { headers: [], rows: [], delimiter: "," };
+
+    const delimiter = detectDelimiter(text);
+    const headerLine = lines[0];
+    const headers = splitLine(headerLine, delimiter).map(h => h.trim());
+    const rows = [];
+
+    for (let i = 1; i < lines.length; i++) {
+      const parts = splitLine(lines[i], delimiter);
+      if (parts.every(p => p.trim().length === 0)) continue;
+      const row = {};
+      headers.forEach((h, idx) => {
+        row[h] = (parts[idx] || "").trim();
+      });
+      rows.push(row);
+    }
+
+    return { headers, rows, delimiter };
+  }
+
+  // ---------------------------------------------------------------------------
+  // Asset Rendering
+  // ---------------------------------------------------------------------------
+  function createAssetCellContent(filename) {
+    const container = document.createElement("div");
+
+    const cleanName = filename.trim();
+    if (!cleanName) {
+      container.textContent = "";
+      return container;
+    }
+
+    const url = ASSET_BASE_URL + encodeURIComponent(cleanName);
+    const lower = cleanName.toLowerCase();
+
+    const isImage = lower.endsWith(".png") ||
+                    lower.endsWith(".jpg") ||
+                    lower.endsWith(".jpeg") ||
+                    lower.endsWith(".webp") ||
+                    lower.endsWith(".gif");
+
+    const isPdf = lower.endsWith(".pdf");
+
+    if (isImage) {
+      const img = document.createElement("img");
+      img.src = url;
+      img.alt = cleanName;
+      img.className = "asset-thumb";
+      container.appendChild(img);
+
+      const link = document.createElement("a");
+      link.href = url;
+      link.target = "_blank";
+      link.rel = "noopener";
+      link.className = "asset-link";
+      link.textContent = "Bild öffnen";
+      container.appendChild(link);
+    } else if (isPdf) {
+      const link = document.createElement("a");
+      link.href = url;
+      link.target = "_blank";
+      link.rel = "noopener";
+      link.className = "asset-link";
+      link.textContent = "PDF öffnen";
+      container.appendChild(link);
+
+      const info = document.createElement("div");
+      info.style.fontSize = "0.7rem";
+      info.style.color = "#9ca3af";
+      info.textContent = cleanName;
+      container.appendChild(info);
+    } else {
+      // Fallback: nur Download-Link mit Dateiname
+      const link = document.createElement("a");
+      link.href = url;
+      link.target = "_blank";
+      link.rel = "noopener";
+      link.className = "asset-link";
+      link.textContent = cleanName;
+      container.appendChild(link);
+    }
+
+    return container;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Table Rendering
+  // ---------------------------------------------------------------------------
+  function renderTable() {
+    tableHead.innerHTML = "";
+    tableBody.innerHTML = "";
+
+    if (!headers.length) return;
+
+    const trHead = document.createElement("tr");
+    headers.forEach(h => {
+      const th = document.createElement("th");
+      th.textContent = h || "(leer)";
+      trHead.appendChild(th);
+    });
+    tableHead.appendChild(trHead);
+
+    filteredRows.forEach(row => {
+      const tr = document.createElement("tr");
+      headers.forEach(h => {
+        const td = document.createElement("td");
+
+        if (h === ASSET_COLUMN && row[h]) {
+          const content = createAssetCellContent(row[h]);
+          td.appendChild(content);
+        } else {
+          td.textContent = row[h] ?? "";
+        }
+
+        tr.appendChild(td);
+      });
+      tableBody.appendChild(tr);
+    });
+
+    countInfoEl.textContent =
+      filteredRows.length + " / " + rows.length + " Zeilen sichtbar";
+  }
+
+  function applyFilter() {
+    const col = filterColumnSelect.value;
+    const text = filterTextInput.value.trim().toLowerCase();
+
+    if (!col || text === "") {
+      filteredRows = rows.slice();
+      renderTable();
+      return;
+    }
+
+    filteredRows = rows.filter(row => {
+      const value = (row[col] || "").toLowerCase();
+      return value.includes(text);
+    });
+
+    renderTable();
+  }
+
+  function initFilterControls() {
+    filterColumnSelect.innerHTML = "";
+    headers.forEach(h => {
+      const opt = document.createElement("option");
+      opt.value = h;
+      opt.textContent = h || "(leer)";
+      filterColumnSelect.appendChild(opt);
+    });
+    filterColumnSelect.disabled = false;
+    filterTextInput.disabled = false;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Fetch + Init
+  // ---------------------------------------------------------------------------
+  fetch(CSV_URL)
+    .then(r => {
+      if (!r.ok) {
+        statusEl.textContent =
+          "Google Tabelle konnte nicht geladen werden. HTTP " + r.status;
+        return "";
+      }
+      return r.text();
+    })
+    .then(text => {
+      if (!text) return;
+      const parsed = parseCSV(text);
+      headers = parsed.headers;
+      rows = parsed.rows;
+      filteredRows = rows.slice();
+
+      if (!headers.length) {
+        statusEl.textContent = "Keine Headerzeile in der Google Tabelle gefunden.";
+        return;
+      }
+
+      statusEl.innerHTML =
+        "Geladen aus Google Sheets CSV. Spalten " +
+        headers.length + ". Zeilen " + rows.length +
+        '. Erkanntes Trennzeichen "' +
+        (parsed.delimiter === "\t" ? "\\t" : parsed.delimiter) + '"';
+
+      initFilterControls();
+      renderTable();
+    })
+    .catch(err => {
+      console.error(err);
+      statusEl.textContent = "Fehler beim Laden der Google Tabelle.";
+    });
+
+  filterColumnSelect.addEventListener("change", applyFilter);
+  filterTextInput.addEventListener("input", applyFilter);
+</script>
+
+</body>
+</html>
